@@ -1,0 +1,17 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+  compile 'org.apache.maven:maven-ant-tasks:2.1.0',
+          'org.apache.ant:ant:1.8.0'
+
+  testCompile 'junit:junit:4.8.1'
+}
+
+test {
+  useJUnit();
+}
+
