@@ -2,18 +2,29 @@ package org.lightguard.gradle;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.repository.ArtifactRepositoryFactory;
 import org.apache.maven.artifact.repository.ArtifactRepositoryPolicy;
 import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
 import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
+import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
+import org.apache.maven.artifact.resolver.ArtifactResolutionException;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
+import org.apache.maven.artifact.resolver.ArtifactResolver;
+import org.apache.maven.artifact.resolver.filter.ScopeArtifactFilter;
+import org.apache.maven.artifact.versioning.VersionRange;
+import org.apache.maven.model.Dependency;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
+import org.apache.maven.project.artifact.MavenMetadataSource;
 import org.apache.tools.ant.BuildException;
 import org.codehaus.classworlds.ClassWorld;
 import org.codehaus.classworlds.DuplicateRealmException;
@@ -66,8 +77,8 @@ public class MavenResolution
     {
         String[] artifactParts = artifactNotation.split( ":" );
 
-        Artifact pom = this.artifactFactory.createArtifact( artifactParts[0], artifactParts[1], artifactParts[2], "compile",
-                                                            "pom" );
+        Artifact pom = this.artifactFactory.createProjectArtifact( artifactParts[0], artifactParts[1], artifactParts[2] );
+
 
         try
         {
@@ -76,6 +87,40 @@ public class MavenResolution
         catch ( ProjectBuildingException e )
         {
             throw new RuntimeException( "Could not build project", e );
+        }
+    }
+
+    public ArtifactResolutionResult retrieveDependencies( final MavenProject mavenProject, final String scope )
+    {
+        try
+        {
+            Artifact mavenProjectArtifact = mavenProject.getArtifact();
+            ArtifactResolver artifactResolver = ( ArtifactResolver ) this.plexusLookup( ArtifactResolver.ROLE );
+            Set<Artifact> set = new HashSet<Artifact>();
+
+            for ( Object o : mavenProject.getDependencies() )
+            {
+                Dependency dep = ( Dependency ) o;
+                Artifact depArtifact = this.artifactFactory.createDependencyArtifact( dep.getGroupId(), dep.getArtifactId(),
+                                                                                      VersionRange.createFromVersion(
+                                                                                          dep.getVersion() ),
+                                                                                      dep.getType(), dep.getClassifier(),
+                                                                                      dep.getScope(), dep.isOptional() );
+                set.add( depArtifact );
+            }
+            MavenMetadataSource metadataSource = ( MavenMetadataSource ) this.plexusLookup( ArtifactMetadataSource.ROLE );
+            ArtifactResolutionResult result = artifactResolver.resolveTransitively( set, mavenProjectArtifact, localRepo,
+                                                                                    this.additionalRepos, metadataSource,
+                                                                                    new ScopeArtifactFilter( scope ) );
+            return result;
+        }
+        catch ( ArtifactNotFoundException e )
+        {
+            throw new RuntimeException( "Could not find artifact", e );
+        }
+        catch ( ArtifactResolutionException e )
+        {
+            throw new RuntimeException( "Could not resolve artifact", e );
         }
     }
 
@@ -94,7 +139,7 @@ public class MavenResolution
     {
         ArtifactRepository repo = this.artifactRepositoryFactory.createArtifactRepository( name, url, layout, snapshotPolicy,
                                                                                            releasePolicy );
-        this.additionalRepos.add( repo );
+        this.addRemoteRepository( repo );
     }
 
     public void addRemoteRepository( ArtifactRepository repo )

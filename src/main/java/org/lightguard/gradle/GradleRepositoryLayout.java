@@ -49,7 +49,7 @@ public class GradleRepositoryLayout implements ArtifactRepositoryLayout
                 path.append( GROUP_SEPARATOR ).append( artifactHandler.getExtension() );
             }
 
-            return path.toString();
+            return directoryPath.append( path.toString() ).toString();
         }
     }
 

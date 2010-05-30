@@ -7,7 +7,9 @@ import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
+import java.util.Set;
 
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.codehaus.plexus.PlexusContainer;
@@ -52,6 +54,24 @@ public class MavenResolutionTest
 
         assertThat( mavenProject, is( notNullValue( MavenProject.class ) ) );
         assertThat( mavenProject.getModel().getDescription(), is( notNullValue( String.class ) ) );
+    }
+
+    @Test
+    public void testRetrieveDeps()
+    {
+        MavenResolution cut = new MavenResolution();
+
+        cut.addRemoteRepository( "central", "http://repo1.maven.org/maven2" );
+        cut.addRemoteRepository( "repository.jboss.org", "http://repository.jboss.org/maven2" );
+        cut.addRemoteRepository( "java.net", "http://download.java.net/maven/2" );
+        cut.setLocalGradleCache( "file:///Users/jporter/.gradle/cache/" );
+
+        MavenProject pom = cut.findPom( "org.jboss.weld:weld-core:1.0.0" );
+        ArtifactResolutionResult result = cut.retrieveDependencies( pom, "runtime" );
+
+        assertThat( result, is( notNullValue( ArtifactResolutionResult.class ) ) );
+        assertThat( result.getArtifacts(), is( notNullValue( Set.class ) ) );
+        assertThat( result.getArtifacts().size(), is( 22 ) );
     }
 
     private Object getValueOfInaccessableField( final String fieldName, final Object containingObject )
