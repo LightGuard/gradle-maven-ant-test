@@ -5,13 +5,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.metadata.ArtifactMetadataRetrievalException;
-
-import static org.hamcrest.CoreMatchers.*;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.lightguard.gradle.MavenArtifactResolution;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 public class MavenArtifactResolutionTest
 {
@@ -19,8 +18,8 @@ public class MavenArtifactResolutionTest
     public void testDependencyResolution() throws ArtifactMetadataRetrievalException, NoSuchFieldException, IllegalAccessException
     {
         MavenArtifactResolution cut = new MavenArtifactResolution();
-        List<File> result = new ArrayList<File>( cut.retrieveArtifacts( Arrays.asList("junit:junit:4.8.1") ) );
-        assertThat( result.isEmpty(), is(false) );
+        List<File> result = new ArrayList<File>( cut.retrieveArtifacts( Arrays.asList( "junit:junit:4.8.1" ) ) );
+        assertThat( result.isEmpty(), is( false ) );
     }
 
     @Test
@@ -28,9 +27,10 @@ public class MavenArtifactResolutionTest
         throws ArtifactMetadataRetrievalException, NoSuchFieldException, IllegalAccessException
     {
         MavenArtifactResolution cut = new MavenArtifactResolution();
-        List<File> result = new ArrayList<File>( cut.retrieveArtifacts( Arrays.asList("log4j:log4j:1.2.16", "junit:junit:4.8.1") ) );
+        List<File> result = new ArrayList<File>( cut.retrieveArtifacts( Arrays.asList( "log4j:log4j:1.2.16",
+                                                                                       "junit:junit:4.8.1" ) ) );
         assertThat( result.isEmpty(), is( false ) );
-        assertThat( result.size(), is(2) );
+        assertThat( result.size(), is( 2 ) );
     }
 
     @Test
